@@ -5,6 +5,11 @@ app = Flask(__name__)  # Create a Flask app instance
 todo_items = {}  # Dictionary to store tasks: {id: {'name': ..., 'priority': ...}}
 next_id = 1      # Counter to assign unique IDs to tasks
 
+# Custom function to return priority for sorting
+def get_priority(task_tuple):
+    # task_tuple is (id, {'name': ..., 'priority': ...})
+    return task_tuple[1]['priority']
+
 # Route to add a new task
 @app.route('/tasks', methods=['POST'])
 def add_task():
@@ -25,10 +30,16 @@ def add_task():
 # Route to list all tasks, sorted by priority
 @app.route('/tasks', methods=['GET'])
 def list_tasks():
-    # Sort tasks by priority (ascending)
-    sorted_tasks = sorted(todo_items.items(), key=lambda item: item[1]['priority'])
+    # Sort tasks using the custom get_priority function
+    sorted_tasks = sorted(todo_items.items(), key=get_priority)
+
     # Return tasks as JSON list, adding the ID to each task
-    return jsonify([{**{'id': task_id}, **data} for task_id, data in sorted_tasks])
+    tasks_with_id = []
+    for task_id, data in sorted_tasks:
+        task = {'id': task_id, 'name': data['name'], 'priority': data['priority']}
+        tasks_with_id.append(task)
+
+    return jsonify(tasks_with_id)
 
 # Route to delete a specific task by its ID
 @app.route('/tasks/<int:task_id>', methods=['DELETE'])
